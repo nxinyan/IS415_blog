@@ -256,3 +256,279 @@ plot(sg_owin)
 summary(sg_owin)
 ```
 
+**Combining point events object and owin object**
+
+Extract childcare events that are located within Singapore
+
+```{r echo=TRUE, eval=TRUE}
+childcareSG_ppp = childcare_ppp[sg_owin]
+```
+
+```{r echo=TRUE, eval=TRUE}
+summary(childcareSG_ppp)
+```
+
+*DIY: Using the method you learned in previous exercise, plot the newly derived childcareSG_ppp as shown below.*
+
+```{r echo=TRUE, eval=TRUE}
+plot(childcareSG_ppp)
+```
+## First-order Spatial Point Patterns Analysis
+
+Using spatstat package, I learnt how to perform first-order spatial point patterns analysis by:
+
+- deriving **kernel density estimation (KDE)** layer for visualising and exploring the intensity of point processes
+
+- performing **Confirmatory Spatial Point Patterns Analysis** by using **Nearest Neighbour** statistics.
+
+### Kernel Density Estimation
+
+**Computing kernel density estimation using automatic bandwidth selection method**
+
+```{r echo=TRUE, eval=TRUE}
+kde_childcareSG_bw <- density(childcareSG_ppp,
+                              sigma=bw.diggle,
+                              edge=TRUE,
+                            kernel="gaussian") 
+```
+
+```{r echo=TRUE, eval=TRUE}
+plot(kde_childcareSG_bw)
+```
+
+Retrieve the bandwidth used to compute the kde layer:
+
+```{r echo=TRUE, eval=TRUE}
+bw <- bw.diggle(childcareSG_ppp)
+bw
+```
+
+**Rescalling KDE values**
+
+rescale() is used to covert the unit of measurement from meter to kilometer
+
+```{r echo=TRUE, eval=TRUE}
+childcareSG_ppp.km <- rescale(childcareSG_ppp, 1000, "km")
+```
+
+```{r echo=TRUE, eval=TRUE}
+kde_childcareSG.bw <- density(childcareSG_ppp.km, sigma=bw.diggle, edge=TRUE, kernel="gaussian")
+plot(kde_childcareSG.bw)
+```
+Notice that the data value in the legend has changed!
+
+**Working with different automatic badwidth methods**
+
+Beside bw.diggle(), there are three other **spatstat** functions can be used to determine the bandwidth, they are: bw.CvL(), bw.scott(), and bw.ppl().
+
+```{r echo=TRUE, eval=TRUE}
+bw.CvL(childcareSG_ppp.km)
+```
+
+```{r echo=TRUE, eval=TRUE}
+bw.scott(childcareSG_ppp.km)
+```
+
+```{r echo=TRUE, eval=TRUE}
+bw.ppl(childcareSG_ppp.km)
+```
+
+```{r echo=TRUE, eval=TRUE}
+bw.diggle(childcareSG_ppp.km)
+```
+
+**bw.ppl()** algorithm because in ther experience it tends to produce the more appropriate values when the pattern consists predominantly of tight clusters. But they also insist that if the purpose of once study is to detect a single tight cluster in the midst of random noise then the **bw.diggle()** method seems to work best.
+
+Compare the output of using bw.diggle and bw.ppl methods
+
+```{r echo=TRUE, eval=TRUE}
+kde_childcareSG.ppl <- density(childcareSG_ppp.km, 
+                               sigma=bw.ppl, 
+                               edge=TRUE,
+                               kernel="gaussian")
+par(mfrow=c(1,2))
+plot(kde_childcareSG.bw, main = "bw.diggle")
+plot(kde_childcareSG.ppl, main = "bw.ppl")
+```
+
+**Working with different kernel methods**
+
+By default, the kernel method used in density.ppp() is gaussian. But there are three other options, namely: Epanechnikov, Quartic and Dics.
+
+```{r echo=TRUE, eval=TRUE}
+par(mfrow=c(2,2))
+plot(density(childcareSG_ppp.km, 
+             sigma=bw.ppl, 
+             edge=TRUE, 
+             kernel="gaussian"), 
+     main="Gaussian")
+plot(density(childcareSG_ppp.km, 
+             sigma=bw.ppl, 
+             edge=TRUE, 
+             kernel="epanechnikov"), 
+     main="Epanechnikov")
+plot(density(childcareSG_ppp.km, 
+             sigma=bw.ppl, 
+             edge=TRUE, 
+             kernel="quartic"), 
+     main="Quartic")
+plot(density(childcareSG_ppp.km, 
+             sigma=bw.ppl, 
+             edge=TRUE, 
+             kernel="disc"), 
+     main="Disc")
+```
+
+**Fixed and Adaptive KDE**
+
+**COMPUTING KDE BY USING FIXED BANDWIDTH**
+
+Compute a KDE layer by defining a bandwidth of 600 meter. The sigma value used is 0.6 in the code chunk below.This is because the unit of measurement of childcareSG_ppp.km object is in kilometer, hence the 600m is 0.6km.
+
+```{r echo=TRUE, eval=TRUE}
+kde_childcareSG_600 <- density(childcareSG_ppp.km, sigma=0.6, edge=TRUE, kernel="gaussian")
+plot(kde_childcareSG_600)
+```
+
+
+**COMPUTING KDE BY USING ADAPTIVE BANDWIDTH**
+
+Fixed bandwidth method is very sensitive to highly skew distribution of spatial point patterns over geographical units for example urban versus rural. To overcome this problem, adaptive bandwidth is used.
+
+```{r echo=TRUE, eval=TRUE}
+kde_childcareSG_adaptive <- adaptive.density(childcareSG_ppp.km, method="kernel")
+plot(kde_childcareSG_adaptive)
+```
+
+Compare fixed and adaptive kernel density estimation outputs
+
+```{r echo=TRUE, eval=TRUE}
+par(mfrow=c(1,2))
+plot(kde_childcareSG.bw, main = "Fixed bandwidth")
+plot(kde_childcareSG_adaptive, main = "Adaptive bandwidth")
+```
+
+**Converting KDE output into grid object**
+
+For mapping purpose, it is converted even though results are the same.
+
+```{r echo=TRUE, eval=TRUE}
+gridded_kde_childcareSG_bw <- as.SpatialGridDataFrame.im(kde_childcareSG.bw)
+spplot(gridded_kde_childcareSG_bw)
+```
+
+**CONVERTING GRIDDED OUTPUT INTO RASTER**
+
+Next, we will convert the gridded kernal density objects into RasterLayer object by using raster() of **raster** package
+
+```{r echo=TRUE, eval=TRUE}
+kde_childcareSG_bw_raster <- raster(gridded_kde_childcareSG_bw)
+```
+
+Look at the properties of kde_childcareSG_bw_raster RasterLayer.
+
+```{r echo=TRUE, eval=TRUE}
+kde_childcareSG_bw_raster
+```
+
+Notice that the crs property is NA.
+
+**ASSIGNING PROJECTION SYSTEMS**
+
+```{r echo=TRUE, eval=TRUE}
+projection(kde_childcareSG_bw_raster) <- CRS("+init=EPSG:3414")
+kde_childcareSG_bw_raster
+```
+
+Notice that the crs property is completed.
+
+**Visualising the output in tmap**
+
+Finally, we will display the raster in cartographic quality map using tmap package.
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(kde_childcareSG_bw_raster) + 
+  tm_raster("v") +
+  tm_layout(legend.position = c("right", "bottom"), frame = FALSE)
+
+```
+
+Notice that the raster values are encoded explicitly onto the raster pixel using the values in “v”" field.
+
+**Comparing Spatial Point Patterns using KDE**
+
+In this section, you will learn how to compare KDE of childcare at Ponggol, Tampines, Chua Chu Kang and Jurong West planning areas.
+
+**Extracting Study Area**
+
+```{r echo=TRUE, eval=TRUE}
+pg = mpsz[mpsz@data$PLN_AREA_N == "PUNGGOL",]
+tm = mpsz[mpsz@data$PLN_AREA_N == "TAMPINES",]
+ck = mpsz[mpsz@data$PLN_AREA_N == "CHOA CHU KANG",]
+jw = mpsz[mpsz@data$PLN_AREA_N == "JURONG WEST",]
+```
+
+Plotting target planning areas
+
+```{r echo=TRUE, eval=TRUE}
+par(mfrow=c(2,2))
+plot(pg, main = "Ponggol")
+plot(tm, main = "Tampines")
+plot(ck, main = "Choa Chu Kang")
+plot(jw, main = "Jurong West")
+```
+
+**CONVERTING THE SPATIAL POINT DATA FRAME INTO GENERIC SP FORMAT**
+
+Convert the SpatialPolygonsDataFrame layers into generic spatialpolygons layers
+
+```{r echo=TRUE, eval=TRUE}
+pg_sp = as(pg, "SpatialPolygons")
+tm_sp = as(tm, "SpatialPolygons")
+ck_sp = as(ck, "SpatialPolygons")
+jw_sp = as(jw, "SpatialPolygons")
+```
+
+**CREATING OWIN OBJECT**
+
+Now, we will convert these SpatialPolygons objects into owin objects that is required by spatstat.
+
+```{r echo=TRUE, eval=TRUE}
+pg_owin = as(pg_sp, "owin")
+tm_owin = as(tm_sp, "owin")
+ck_owin = as(ck_sp, "owin")
+jw_owin = as(jw_sp, "owin")
+```
+
+**COMBINING CHILDCARE POINTS AND THE STUDY AREA**
+
+By using the code chunk below, we are able to extract childcare that is within the specific region to do our analysis later on.
+
+```{r echo=TRUE, eval=TRUE}
+childcare_pg_ppp = childcare_ppp_jit[pg_owin]
+childcare_tm_ppp = childcare_ppp_jit[tm_owin]
+childcare_ck_ppp = childcare_ppp_jit[ck_owin]
+childcare_jw_ppp = childcare_ppp_jit[jw_owin]
+```
+
+Next, rescale() function is used to trasnform the unit of measurement from metre to kilometre.
+
+```{r echo=TRUE, eval=TRUE}
+childcare_pg_ppp.km = rescale(childcare_pg_ppp, 1000, "km")
+childcare_tm_ppp.km = rescale(childcare_tm_ppp, 1000, "km")
+childcare_ck_ppp.km = rescale(childcare_ck_ppp, 1000, "km")
+childcare_jw_ppp.km = rescale(childcare_jw_ppp, 1000, "km")
+```
+
+Plot the four study areas and the locations of the childcare centres.
+
+```{r echo=TRUE, eval=TRUE}
+par(mfrow=c(2,2))
+plot(childcare_pg_ppp.km, main="Punggol")
+plot(childcare_tm_ppp.km, main="Tampines")
+plot(childcare_ck_ppp.km, main="Choa Chu Kang")
+plot(childcare_jw_ppp.km, main="Jurong West")
+```
+
+
+
