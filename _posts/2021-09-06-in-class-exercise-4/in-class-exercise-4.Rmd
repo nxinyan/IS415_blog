@@ -1,0 +1,139 @@
+---
+title: "In-class Exercise 4"
+description: |
+  A short description of the post.
+author:
+  - name: Ngah Xin Yan
+    url: https://github.com/nxinyan/
+date: 09-06-2021
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+# Installing and Loading the R packages
+
+- sf is mainly used for importing geospatial data.
+- raster for handling raster-based geospatial data 
+- spatstat is used for spatial point analysis
+
+
+```{r echo=TRUE, eval=TRUE}
+
+packages = c('maptools', 'sf', 'raster','spatstat', 'tmap','tidyverse' )
+for (p in packages){
+if(!require(p, character.only = T)){
+install.packages(p)
+}
+library(p,character.only = T)
+}
+
+```
+
+## Importing Geospatial Data
+
+```{r echo=TRUE, eval=TRUE}
+sg_sf <- st_read(dsn = "data/shapefile", 
+                 layer="CostalOutline")
+mpsz_sf <- st_read(dsn = "data/shapefile", 
+                 layer="MP14_SUBZONE_WEB_PL")
+```
+## Importing Aspatial Data
+
+```{r echo=TRUE, eval=TRUE}
+childcare <- read_rds("data/rds/childcare.rds")
+CHAS <- read_rds("data/rds/CHAS.rds")
+```
+
+### Converting from aspatial to geospatial
+
+```{r echo=TRUE, eval=TRUE}
+CHAS_sf <- st_as_sf(CHAS,
+                    coords = c("X_COORDINATE",
+                               "Y_COORDINATE"),
+                    crs=3414)
+```
+
+```{r echo=TRUE, eval=TRUE}
+childcare$Lat <- as.numeric(childcare$Lat)
+childcare$Lng <- as.numeric(childcare$Lng)
+childcare_sf <- st_as_sf(childcare,
+                         coords = c("Lng",
+                                    "Lat"),
+                         crs=4326) %>%
+  st_transform(crs = 3414)
+```
+
+## Geospatial Data Wrangling
+
+### Converting from sf to Spatial Classes
+
+```{r echo=TRUE, eval=TRUE}
+childcare <- as_Spatial(childcare_sf)
+CHAS <- as_Spatial(CHAS_sf)
+mpsz <- as_Spatial(mpsz_sf)
+sg <- as_Spatial(sg_sf)
+```
+
+### Conerting from Spatial* classes to sp format
+
+```{r echo=TRUE, eval=TRUE}
+childcare_sp <- as(childcare, "SpatialPoints")
+CHAS_sp <- as(CHAS, "SpatialPoints")
+sg_sp <- as(sg, "SpatialPolygons")
+```
+
+### Converting from sp to spatstat ppp format
+
+```{r echo=TRUE, eval=TRUE}
+childcare_ppp <- as(childcare_sp, "ppp")
+CHAS_ppp <- as(CHAS_sp, "ppp")
+```
+
+```{r echo=TRUE, eval=TRUE}
+tmap_mode('view')
+tm_shape(childcare_sf) + 
+  tm_dots(alpha=0.4,
+          col="blue",
+          size=0.05) +
+  tm_shape(CHAS_sf) + 
+    tm_dots(alpha=0.4,
+            col="red",
+            size=0.05)
+```
+
+```{r echo=TRUE, eval=TRUE}
+
+```
+
+```{r echo=TRUE, eval=TRUE}
+
+```
+
+```{r echo=TRUE, eval=TRUE}
+
+```
+
+```{r echo=TRUE, eval=TRUE}
+
+```
+
+```{r echo=TRUE, eval=TRUE}
+
+```
+
+```{r echo=TRUE, eval=TRUE}
+
+```
+
+```{r echo=TRUE, eval=TRUE}
+
+```
+
+```{r echo=TRUE, eval=TRUE}```
