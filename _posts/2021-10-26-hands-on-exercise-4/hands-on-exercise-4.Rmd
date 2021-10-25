@@ -1,0 +1,258 @@
+---
+title: "Hands-on Exercise 4"
+description: |
+  In this hands-on exercise, I learnt to perform spatial point patterns analysis using approriate functions of spatstat package
+author:
+  - name: Ngah Xin Yan
+    url: https://github.com/nxinyan/
+date: 09-05-2021
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      eval = TRUE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.retina = 3)
+```
+
+## Overview
+
+Spatial Point Pattern Analysis is the evaluation of the pattern or distribution, of a set of points on a surface. Examples of location of point include:
+
+- events such as crime, traffic accident and disease onset
+
+- business services (coffee and fastfood outlets) or facilities such as childcare and eldercare
+
+## Data Used
+
+The following datasets were used:
+
+- `CHILDCARE`, a point feature data providing both location and attribute information of childcare centres. It was downloaded from Data.gov.sg and is in geojson format.
+
+- `MP14_SUBZONE_WEB_PL`, a polygon feature data providing information of URA 2014 Master Plan Planning Subzone boundary data. It is in ESRI shapefile format. This data set was also downloaded from Data.gov.sg.
+
+- `CostalOutline`, a polygon feature data showing the national boundary of Singapore. It is provided by SLA and is in ESRI shapefile format.
+
+## Installing and Loading the R packages
+
+- **sf**: used to import, manage and process vector-based geospatial data in R.
+
+- [**spatstat**](https://spatstat.org/): for point pattern analysis.
+
+- [**raster**](https://cran.r-project.org/web/packages/raster/): reads, writes, manipulates, analyses and model of gridded spatial data.
+
+- [**maptools**](https://cran.r-project.org/web/packages/maptools/index.html): provides a set of tools for manipulating geographic data. 
+
+- **tmap**: provides functions for plotting cartographic quality static point patterns maps or interactive maps by using leaflet API.
+
+```{r echo=TRUE, eval=TRUE}
+packages = c('maptools', 'sf', 'raster','spatstat', 'tmap','tidyverse' )
+for (p in packages){
+if(!require(p, character.only = T)){
+install.packages(p)
+}
+library(p,character.only = T)
+}
+```
+
+## Spatial Data Wrangling
+### Importing the spatial data
+
+```{r echo=TRUE, eval=TRUE}
+childcare_sf <- st_read("data/child-care-services-geojson.geojson") %>%
+  st_transform(crs = 3414)
+```
+
+```{r echo=TRUE, eval=TRUE}
+sg_sf <- st_read(dsn = "data", layer="CostalOutline")
+
+```
+
+```{r echo=TRUE, eval=TRUE}
+mpsz_sf <- st_read(dsn = "data", 
+                layer = "MP14_SUBZONE_WEB_PL")
+```
+
+*DIY: Using the appropriate sf function you learned in Hands-on Exercise 2, retrieve the referencing system information of these geospatial data.*
+
+```{r code_folding=TRUE}
+
+st_crs(childcare_sf)
+st_crs(mpsz_sf)
+st_crs(sg_sf)
+
+```
+
+*DIY: Using the method you learned in Lesson 2, assign the correct crs to mpsz_sf and sg_sf simple feature data frames.*
+
+```{r echo=TRUE, eval=TRUE}
+mpsz3414_sf <- st_transform(mpsz_sf, 
+                              crs = 3414)
+```
+
+```{r echo=TRUE, eval=TRUE}
+sg3414_sf <- st_transform(sg_sf, 
+                              crs = 3414)
+```
+
+```{r echo=TRUE, eval=TRUE}
+st_crs(mpsz3414_sf)
+st_crs(sg3414_sf)
+st_crs(childcare_sf)
+```
+
+**Mapping the geospatial data sets**
+
+*DIY: Using the mapping methods you learned in Hands-on Exercise 3, prepare a map as shown below.*
+
+```{r}
+tm_shape(sg3414_sf) +
+  tm_polygons() +
+tm_shape(mpsz3414_sf) +
+  tm_polygons() +
+tm_shape(childcare_sf)+
+  tm_dots()
+```
+
+```{r}
+tmap_mode('view')
+tm_shape(childcare_sf)+
+  tm_dots()
+```
+```{r}
+tmap_mode('plot')
+```
+## Geospatial Data Wrangling
+
+**Converting sf data frames to sp’s Spatial* class**
+
+```{r echo=TRUE, eval=TRUE}
+childcare <- as_Spatial(childcare_sf)
+mpsz <- as_Spatial(mpsz_sf)
+sg <- as_Spatial(sg_sf)
+```
+
+*DIY: Using appropriate function, display the information of these three Spatial classes as shown below.*
+
+```{r echo=TRUE, eval=TRUE}
+childcare
+```
+
+```{r echo=TRUE, eval=TRUE}
+mpsz
+```
+
+```{r echo=TRUE, eval=TRUE}
+sg 
+```
+**Converting the Spatial* class into generic sp format**
+
+spatstat requires the analytical data in ppp object form. There is no direct way to convert a Spatial* classes into ppp object. We need to convert the Spatial classes* into Spatial object first.
+
+```{r echo=TRUE, eval=TRUE}
+childcare_sp <- as(childcare, "SpatialPoints")
+sg_sp <- as(sg, "SpatialPolygons")
+```
+
+```{r echo=TRUE, eval=TRUE}
+childcare_sp
+```
+
+```{r echo=TRUE, eval=TRUE}
+sg_sp
+```
+
+**Converting the generic sp format into spatstat’s ppp format**
+
+Now, we will use as.ppp() function of **spatstat** to convert the spatial data into **spatstat**’s **ppp** object format.
+
+```{r echo=TRUE, eval=TRUE}
+childcare_ppp <- as(childcare_sp, "ppp")
+childcare_ppp
+```
+```{r echo=TRUE, eval=TRUE}
+plot(childcare_ppp)
+```
+
+```{r echo=TRUE, eval=TRUE}
+summary(childcare_ppp)
+```
+> Notice the warning message about duplicates. In spatial point patterns analysis an issue of significant is the presence of duplicates. The statistical methodology used for spatial point patterns processes is based largely on the assumption that process are simple, that is, that the points cannot be coincident.
+
+**Handling duplicated points**
+
+Checking for duplicate
+
+```{r echo=TRUE, eval=TRUE}
+any(duplicated(childcare_ppp))
+```
+
+Count the number of co-indicence point
+
+```{r echo=TRUE, eval=FALSE}
+multiplicity(childcare_ppp)
+```
+
+To know how many locations have more than one point event
+
+```{r echo=TRUE, eval=TRUE}
+sum(multiplicity(childcare_ppp) > 1)
+```
+
+```{r echo=TRUE, eval=TRUE}
+tmap_mode('view')
+tm_shape(childcare) +
+  tm_dots(alpha=0.4, 
+          size=0.05)
+```
+
+```{r echo=TRUE, eval=TRUE}
+tmap_mode('plot')
+```
+
+**Solving the duplicate problem**
+
+There are 3 ways to solve this: 
+
+1. Delete the duplicates, however useful point events will be lost.
+
+2. Jittering, add a small perturbation to the duplicate points so that they do not occupy the exact same space.
+
+3. Make each point “unique” and then attach the duplicates of the points to the patterns as marks, as attributes of the points. Then you would need analytical techniques that take into account these marks.
+
+
+Implements the jittering approach  below:
+
+```{r echo=TRUE, eval=TRUE}
+childcare_ppp_jit <- rjitter(childcare_ppp, 
+                             retry=TRUE, 
+                             nsim=1, 
+                             drop=TRUE)
+```
+
+*DIY: Using the method you learned in previous section, check if any dusplicated point in this geospatial data.*
+
+```{r echo=TRUE, eval=TRUE}
+any(duplicated(childcare_ppp_jit))
+```
+**Creating owin object**
+
+When analysing spatial point patterns, it is a good practice to confine the analysis with a geographical area like Singapore boundary.
+
+```{r echo=TRUE, eval=TRUE}
+sg_owin <- as(sg_sp, "owin")
+```
+
+```{r echo=TRUE, eval=TRUE}
+plot(sg_owin)
+```
+
+```{r echo=TRUE, eval=TRUE}
+summary(sg_owin)
+```
+
