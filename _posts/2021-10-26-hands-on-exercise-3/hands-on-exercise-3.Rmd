@@ -102,3 +102,310 @@ qtm(mpsz_pop2020,
     fill = "DEPENDENCY")
 ```
 
+### Creating a choropleth map by using tmap’s elements
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY", 
+          style = "quantile", 
+          palette = "Blues",
+          title = "Dependency ratio") +
+  tm_layout(main.title = "Distribution of Dependency Ratio by planning subzone",
+            main.title.position = "center",
+            main.title.size = 1.2,
+            legend.height = 0.45, 
+            legend.width = 0.35,
+            frame = TRUE) +
+  tm_borders(alpha = 0.5) +
+  tm_compass(type="8star", size = 2) +
+  tm_scale_bar() +
+  tm_grid(alpha =0.2) +
+  tm_credits("Source: Planning Sub-zone boundary from Urban Redevelopment Authorithy (URA)\n and Population data from Department of Statistics DOS", 
+             position = c("left", "bottom"))
+```
+**1. DRAWING A BASE MAP**
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020) +
+  tm_polygons()
+```
+**2. DRAWING A CHOROPLETH MAP USING TM_POLYGONS()**
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_polygons("DEPENDENCY")
+```
+
+**3. DRAWING A CHOROPLETH MAP USING TM_FILL() AND TM_BORDER()**
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY")
+```
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY") +
+  tm_borders(lwd = 0.1, alpha = 1)
+```
+
+
+
+
+### Data classification methods of tmap
+
+**1. PLOTTING CHOROPLETH MAPS WITH BUILT-IN CLASSIFICATION METHODS**
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY",
+          n = 5,
+          style = "jenks") +
+  tm_borders(alpha = 0.5)
+```
+- Equal data classification is used in the code below
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY",
+          n = 5,
+          style = "equal") +
+  tm_borders(alpha = 0.5)
+```
+- Notice that distribution of quantile data classification method are more evenly distributed then equal data classification method
+
+**2. PLOTTING CHOROPLETH MAP WITH CUSTOME BREAK**
+
+```{r echo=TRUE, eval=TRUE}
+summary(mpsz_pop2020$DEPENDENCY)
+```                
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY",
+          breaks = c(0, 0.60, 0.70, 0.80, 0.90, 1.00)) +
+  tm_borders(alpha = 0.5)
+```
+***DIY: Using what you had learned, prepare choropleth maps by using different classification methods supported by tmap and compare their differences.***  
+
+**SD Data Classification**
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY",
+          n = 5,
+          style = "sd") +
+  tm_borders(alpha = 0.5)
+```
+**Quantile Data Classification**
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY",
+          n = 5,
+          style = "quantile") +
+  tm_borders(alpha = 0.5)
+```
+
+***DIY: Preparing choropleth maps by using similar classification method but with different numbers of classes (i.e. 2, 6, 10, 20). Compare the output maps, what observation can you draw?***  
+
+**Number of classes,n = 2 for quantile and equal data classification**
+
+Quantile data classification
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY",
+          n = 2,
+          style = "quantile") +
+  tm_borders(alpha = 0.5)
+```
+
+Equal data classification
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY",
+          n = 2,
+          style = "equal") +
+  tm_borders(alpha = 0.5)
+```
+
+Observation: Both maps looks like it is more generalised, could not tell more details from it.
+
+**Number of classes,n = 6 for quantile and equal data classification**
+
+Quantile data classification
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY",
+          n = 6,
+          style = "quantile") +
+  tm_borders(alpha = 0.5)
+```
+
+Equal data classification
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY",
+          n = 6,
+          style = "equal") +
+  tm_borders(alpha = 0.5)
+```
+Observation: As the number of classes increases, for quantile map, it becomes more evenly distributed, as for equal data maps it stayed the same
+
+### Colour Scheme
+**1. USING COLOURBREWER PALETTE**
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY",
+          n = 6,
+          style = 'quantile',
+          palette = 'Blues') +
+  tm_borders(alpha = 0.5)
+```
+
+**Reverse colour shading for blue**
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY", 
+          style = "quantile",
+          palette = "-Blues") + 
+  tm_borders(alpha = 0.5)
+```                
+                
+### Map Layouts
+**MAP LEGEND**
+                
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY", 
+          style = "jenks", 
+          palette = "Blues", 
+          legend.hist = TRUE, 
+          legend.is.portrait = TRUE,
+          legend.hist.z = 0.1) + 
+  tm_layout(main.title = "Distribution of Dependency Ration by planning subzone \n(Jenks classification)",
+            main.title.position = "center",
+            main.title.size = 1,
+            legend.height = 0.45, 
+            legend.width = 0.35,
+            legend.outside = FALSE,
+            legend.position = c("right", "bottom"),
+            frame = FALSE) +
+  tm_borders(alpha = 0.5)
+```
+**2. MAP STYLE**
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY", 
+          style = "quantile", 
+          palette = "-Greens") +
+  tm_borders(alpha = 0.5) +
+  tmap_style("classic")
+```                      
+**3. CARTOGRAPHIC FURNITURE**     
+                
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill("DEPENDENCY", 
+          style = "quantile", 
+          palette = "Blues",
+          title = "No. of persons") +
+  tm_layout(main.title = "Distribution of Dependency Ratio \nby planning subzone",
+            main.title.position = "center",
+            main.title.size = 1.2,
+            legend.height = 0.45, 
+            legend.width = 0.35,
+            frame = TRUE) +
+  tm_borders(alpha = 0.5) +
+  tm_compass(type="8star", size = 2) +
+  tm_scale_bar(width = 0.15) +
+  tm_grid(lwd = 0.1, alpha = 0.2) +
+  tm_credits("Source: Planning Sub-zone boundary from Urban Redevelopment Authorithy (URA)\n and Population data from Department of Statistics DOS", 
+             position = c("left", "bottom"))
+```
+To reset default style
+
+```{r echo=TRUE, eval=TRUE}
+tmap_style("cobalt")
+```
+### Drawing Small Multiple Choropleth Maps
+**1. BY ASSIGNING MULTIPLE VALUES TO AT LEAST ONE OF THE AESTHETIC ARGUMENTS**
+- showing same map with different factor
+
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+
+  tm_fill(c("YOUNG", "AGED"),
+          style = "equal", 
+          palette = "Blues") +
+  tm_layout(legend.position = c("right", "bottom")) +
+  tm_borders(alpha = 0.5) +
+  tmap_style("white")
+```       
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020)+ 
+  tm_polygons(c("DEPENDENCY","AGED"),
+          style = c("equal", "quantile"), 
+          palette = list("Blues","Greens")) +
+  tm_layout(legend.position = c("right", "bottom"))
+```       
+
+**2. BY DEFINING A GROUP-BY VARIABLE IN TM_FACETS()**
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020) +
+  tm_fill("DEPENDENCY",
+          style = "quantile",
+          palette = "Blues",
+          thres.poly = 0) + 
+  tm_facets(by="REGION_N", 
+            free.coords=TRUE, 
+            drop.shapes=TRUE) +
+  tm_layout(legend.show = FALSE,
+            title.position = c("center", "center"), 
+            title.size = 20) +
+  tm_borders(alpha = 0.5)
+```       
+**3. BY CREATING MULTIPLE STAND-ALONE MAPS WITH TMAP_ARRANGE()**
+
+```{r echo=TRUE, eval=TRUE}
+youngmap <- tm_shape(mpsz_pop2020)+ 
+  tm_polygons("YOUNG", 
+              style = "quantile", 
+              palette = "Blues")
+
+agedmap <- tm_shape(mpsz_pop2020)+ 
+  tm_polygons("AGED", 
+              style = "quantile", 
+              palette = "Blues")
+
+tmap_arrange(youngmap, agedmap, asp=1, ncol=2)
+```  
+
+### Mappping Spatial Object Meeting a Selection Criterion
+- a map to show two factor at one time (e.g. central region and dependency)
+
+```{r echo=TRUE, eval=TRUE}
+tm_shape(mpsz_pop2020[mpsz_pop2020$REGION_N=="CENTRAL REGION", ])+
+  tm_fill("DEPENDENCY", 
+          style = "quantile", 
+          palette = "Blues", 
+          legend.hist = TRUE, 
+          legend.is.portrait = TRUE,
+          legend.hist.z = 0.1) +
+  tm_layout(legend.outside = TRUE,
+            legend.height = 0.45, 
+            legend.width = 5.0,
+            legend.position = c("right", "bottom"),
+            frame = FALSE) +
+  tm_borders(alpha = 0.5)
+```
+
